@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full-Featured Web Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Styles */
+        :root {
+            --bg-light: #f3f4f6; /* gray-100 */
+            --bg-dark: #1f2937;  /* gray-800 */
+            --card-light: #ffffff;
+            --card-dark: #374151; /* gray-700 */
+            --text-light: #111827; /* gray-900 */
+            --text-dark: #f9fafb;  /* gray-50 */
+            --primary-light: #4f46e5; /* indigo-600 */
+            --primary-dark: #818cf8;  /* indigo-400 */
+            --secondary-light: #e5e7eb; /* gray-200 */
+            --secondary-dark: #4b5563;  /* gray-600 */
+            --history-bg-light: #e5e7eb;
+            --history-bg-dark: #4b5563;
+        }
+
+        html.light {
+            --bg-color: var(--bg-light);
+            --card-color: var(--card-light);
+            --text-color: var(--text-light);
+            --primary-color: var(--primary-light);
+            --secondary-color: var(--secondary-light);
+            --history-bg: var(--history-bg-light);
+        }
+
+        html.dark {
+            --bg-color: var(--bg-dark);
+            --card-color: var(--card-dark);
+            --text-color: var(--text-dark);
+            --primary-color: var(--primary-dark);
+            --secondary-color: var(--secondary-dark);
+            --history-bg: var(--history-bg-dark);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .calculator-container {
+            background-color: var(--card-color);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            transition: background-color 0.3s;
+        }
+
+        .calc-button {
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .calc-button:active {
+            transform: scale(0.95);
+        }
+        .operator-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .operator-btn:hover {
+            opacity: 0.9;
+        }
+        .secondary-btn {
+            background-color: var(--secondary-color);
+        }
+        .secondary-btn:hover {
+             background-color: var(--primary-color);
+             color: white;
+        }
+
+        #history-panel {
+            background-color: var(--history-bg);
+            transition: background-color 0.3s;
+        }
+        
+        /* Tab styling */
+        .tab-button.active {
+            border-bottom-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--secondary-color);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            opacity: 0.8;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 140px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -70px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Hide number input spinners */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+          -webkit-appearance: none; 
+          margin: 0; 
+        }
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    
+    <div class="calculator-container w-full max-w-4xl mx-auto rounded-2xl p-4 md:p-6 lg:p-8 flex flex-col md:flex-row gap-6">
+
+        <!-- Main Calculator Section -->
+        <div class="w-full md:w-2/3 lg:w-3/4">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-2xl font-bold">Calculator</h1>
+                <div class="flex items-center gap-4">
+                    <button id="theme-toggle" class="p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2" title="Toggle light/dark mode">
+                        <svg id="theme-icon-light" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                        <svg id="theme-icon-dark" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                    </button>
+                    <button id="copy-btn" class="p-2 rounded-full secondary-btn focus:outline-none focus:ring-2 focus:ring-offset-2" title="Copy Result">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Display -->
+            <div class="bg-[var(--secondary-color)] rounded-lg p-4 mb-4 text-right">
+                <div id="expression-display" class="text-lg opacity-70 h-7 overflow-x-auto overflow-y-hidden whitespace-nowrap"></div>
+                <div id="main-display" class="text-4xl font-semibold break-all">0</div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="border-b border-gray-400 mb-4">
+                <nav class="flex -mb-px space-x-6">
+                    <button class="tab-button py-2 px-1 border-b-2 font-medium text-sm border-transparent" data-tab="basic">Basic</button>
+                    <button class="tab-button py-2 px-1 border-b-2 font-medium text-sm border-transparent" data-tab="scientific">Scientific</button>
+                    <button class="tab-button py-2 px-1 border-b-2 font-medium text-sm border-transparent" data-tab="financial">Financial</button>
+                    <button class="tab-button py-2 px-1 border-b-2 font-medium text-sm border-transparent" data-tab="programming">Programming</button>
+                </nav>
+            </div>
+
+            <!-- Calculator Modes Content -->
+            <div id="calculator-modes">
+                <!-- Basic Calculator -->
+                <div id="basic-tab" class="grid grid-cols-5 gap-2">
+                    <!-- Row 1 -->
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="%">%</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="CE">CE</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="C">C</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="backspace">⌫</button>
+                    <button class="calc-button operator-btn rounded-lg p-3 text-lg font-medium" data-value="/">÷</button>
+                    <!-- Row 2 -->
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="7">7</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="8">8</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="9">9</button>
+                    <button class="calc-button operator-btn rounded-lg p-3 text-lg font-medium" data-value="*">×</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="M+">M+</button>
+                    <!-- Row 3 -->
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="4">4</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="5">5</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="6">6</button>
+                    <button class="calc-button operator-btn rounded-lg p-3 text-lg font-medium" data-value="-">−</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="M-">M-</button>
+                    <!-- Row 4 -->
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="1">1</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="2">2</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="3">3</button>
+                    <button class="calc-button operator-btn rounded-lg p-3 text-lg font-medium" data-value="+">+</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="MR">MR</button>
+                    <!-- Row 5 -->
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="±">±</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value="0">0</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-lg font-medium" data-value=".">.</button>
+                    <button class="calc-button operator-btn rounded-lg p-3 text-lg font-medium col-span-2" data-value="=">=</button>
+                </div>
+
+                <!-- Scientific Calculator -->
+                <div id="scientific-tab" class="hidden grid grid-cols-5 gap-2">
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="sin">sin<span class="tooltiptext">Sine</span></button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="cos">cos<span class="tooltiptext">Cosine</span></button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="tan">tan<span class="tooltiptext">Tangent</span></button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="pi">π<span class="tooltiptext">Pi</span></button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="e">e<span class="tooltiptext">Euler's Number</span></button>
+                    
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="asin">sin⁻¹<span class="tooltiptext">Arcsine</span></button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="acos">cos⁻¹<span class="tooltiptext">Arccosine</span></button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="atan">tan⁻¹<span class="tooltiptext">Arctangent</span></button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="x^2">x²<span class="tooltiptext">Square</span></button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="x^y">xʸ<span class="tooltiptext">Power</span></button>
+                    
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="log">log<span class="tooltiptext">Log base 10</span></button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="ln">ln<span class="tooltiptext">Natural Log</span></button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="(">(</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value=")">)</button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="sqrt">√<span class="tooltiptext">Square Root</span></button>
+                    
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="fact">n!<span class="tooltiptext">Factorial</span></button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="abs">|x|<span class="tooltiptext">Absolute Value</span></button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium tooltip" data-value="exp">eˣ<span class="tooltiptext">e to the power of x</span></button>
+                    <button class="calc-button secondary-btn rounded-lg p-3 text-sm font-medium" id="rad-deg-toggle" data-value="deg">DEG</button>
+                </div>
+
+                <!-- Financial Calculator -->
+                <div id="financial-tab" class="hidden space-y-4">
+                    <h3 class="font-semibold text-lg">Loan (EMI) Calculator</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <input type="number" id="loan-principal" placeholder="Principal Amount" class="p-2 rounded-md bg-[var(--secondary-color)]">
+                        <input type="number" id="loan-rate" placeholder="Annual Rate (%)" class="p-2 rounded-md bg-[var(--secondary-color)]">
+                        <input type="number" id="loan-time" placeholder="Time (Years)" class="p-2 rounded-md bg-[var(--secondary-color)]">
+                    </div>
+                    <button id="calculate-emi" class="w-full operator-btn rounded-lg p-3 font-medium">Calculate EMI</button>
+                    <div id="emi-result" class="text-center font-medium"></div>
+                </div>
+
+                <!-- Programming Calculator -->
+                <div id="programming-tab" class="hidden space-y-4">
+                     <h3 class="font-semibold text-lg">Number Base Converter</h3>
+                     <div class="grid grid-cols-2 gap-4">
+                        <div>
+                           <label for="prog-from-base" class="block text-sm font-medium">From</label>
+                           <select id="prog-from-base" class="w-full p-2 rounded-md bg-[var(--secondary-color)]">
+                               <option value="10">Decimal</option>
+                               <option value="2">Binary</option>
+                               <option value="8">Octal</option>
+                               <option value="16">Hexadecimal</option>
+                           </select>
+                        </div>
+                         <div>
+                           <label for="prog-to-base" class="block text-sm font-medium">To</label>
+                           <select id="prog-to-base" class="w-full p-2 rounded-md bg-[var(--secondary-color)]">
+                               <option value="2">Binary</option>
+                               <option value="10" selected>Decimal</option>
+                               <option value="8">Octal</option>
+                               <option value="16">Hexadecimal</option>
+                           </select>
+                        </div>
+                     </div>
+                     <input type="text" id="prog-input" placeholder="Enter number" class="w-full p-2 rounded-md bg-[var(--secondary-color)]">
+                     <button id="prog-convert" class="w-full operator-btn rounded-lg p-3 font-medium">Convert</button>
+                     <div id="prog-result" class="text-center font-medium break-all"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- History Section -->
+        <div id="history-panel" class="w-full md:w-1/3 lg:w-1/4 rounded-lg p-4 flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="font-bold text-lg">History</h2>
+                <button id="clear-history" class="text-sm hover:text-[var(--primary-color)]" title="Clear History">Clear</button>
+            </div>
+            <div id="history-content" class="flex-grow overflow-y-auto space-y-2">
+                <!-- History items will be injected here -->
+                <p class="text-sm opacity-60 text-center">No history yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const mainDisplay = document.getElementById('main-display');
+            const expressionDisplay = document.getElementById('expression-display');
+            const historyContent = document.getElementById('history-content');
+            const calculatorModes = document.getElementById('calculator-modes');
+            const tabs = document.querySelectorAll('.tab-button');
+            const themeToggle = document.getElementById('theme-toggle');
+            const lightIcon = document.getElementById('theme-icon-light');
+            const darkIcon = document.getElementById('theme-icon-dark');
+            const radDegToggle = document.getElementById('rad-deg-toggle');
+
+            // State
+            let currentInput = '0';
+            let currentExpression = '';
+            let history = [];
+            let memory = 0;
+            let angleMode = 'deg'; // 'deg' or 'rad'
+            let justEvaluated = false;
+
+            // --- LOCAL STORAGE ---
+            const saveState = () => {
+                localStorage.setItem('calculatorHistory', JSON.stringify(history));
+                localStorage.setItem('calculatorMemory', memory);
+                localStorage.setItem('calculatorTheme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+                localStorage.setItem('calculatorAngleMode', angleMode);
+            };
+
+            const loadState = () => {
+                // Load History
+                const savedHistory = localStorage.getItem('calculatorHistory');
+                if (savedHistory) {
+                    history = JSON.parse(savedHistory);
+                    updateHistoryUI();
+                }
+                // Load Memory
+                const savedMemory = localStorage.getItem('calculatorMemory');
+                if (savedMemory) {
+                    memory = parseFloat(savedMemory);
+                }
+                // Load Theme
+                const savedTheme = localStorage.getItem('calculatorTheme');
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    darkIcon.classList.remove('hidden');
+                    lightIcon.classList.add('hidden');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    lightIcon.classList.remove('hidden');
+                    darkIcon.classList.add('hidden');
+                }
+                 // Load Angle Mode
+                const savedAngleMode = localStorage.getItem('calculatorAngleMode');
+                if (savedAngleMode) {
+                    angleMode = savedAngleMode;
+                    radDegToggle.textContent = angleMode.toUpperCase();
+                }
+            };
+            
+            // --- UI UPDATES ---
+            const updateDisplay = () => {
+                mainDisplay.textContent = currentInput;
+                expressionDisplay.textContent = currentExpression;
+            };
+
+            const updateHistoryUI = () => {
+                historyContent.innerHTML = '';
+                if (history.length === 0) {
+                    historyContent.innerHTML = '<p class="text-sm opacity-60 text-center">No history yet.</p>';
+                    return;
+                }
+                history.slice().reverse().forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'p-2 rounded-md cursor-pointer hover:bg-gray-400/30';
+                    div.innerHTML = `<p class="text-xs opacity-70 break-all">${item.expression}</p><p class="font-semibold text-right break-all">${item.result}</p>`;
+                    div.addEventListener('click', () => {
+                        currentInput = item.result.toString();
+                        currentExpression = '';
+                        updateDisplay();
+                    });
+                    historyContent.appendChild(div);
+                });
+            };
+
+            // --- EVENT LISTENERS ---
+
+            // Calculator buttons
+            calculatorModes.addEventListener('click', (e) => {
+                if (e.target.matches('.calc-button')) {
+                    const { value } = e.target.dataset;
+                    handleInput(value);
+                }
+            });
+            
+            // Clear history button
+            document.getElementById('clear-history').addEventListener('click', () => {
+                history = [];
+                updateHistoryUI();
+                saveState();
+            });
+
+            // Keyboard input
+            document.addEventListener('keydown', (e) => {
+                e.preventDefault();
+                let key = e.key;
+                if (key >= '0' && key <= '9') handleInput(key);
+                if (['+', '-', '*', '/'].includes(key)) handleInput(key);
+                if (key === '.') handleInput('.');
+                if (key === 'Enter' || key === '=') handleInput('=');
+                if (key === 'Backspace') handleInput('backspace');
+                if (key === 'Escape') handleInput('C');
+                if (key === '%') handleInput('%');
+            });
+            
+            // Theme toggle
+            themeToggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                const isDark = document.documentElement.classList.contains('dark');
+                darkIcon.classList.toggle('hidden', !isDark);
+                lightIcon.classList.toggle('hidden', isDark);
+                saveState();
+            });
+
+            // Copy button
+            document.getElementById('copy-btn').addEventListener('click', () => {
+                const textToCopy = mainDisplay.textContent;
+                // A workaround for clipboard API in secure contexts (like iframes)
+                const textArea = document.createElement('textarea');
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                }
+                document.body.removeChild(textArea);
+            });
+            
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    document.querySelectorAll('#calculator-modes > div').forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    
+                    document.getElementById(`${tab.dataset.tab}-tab`).classList.remove('hidden');
+                });
+            });
+
+            // --- CORE LOGIC ---
+            const handleInput = (value) => {
+                const isNumber = !isNaN(parseFloat(value));
+                const isOperator = ['+', '-', '*', '/'].includes(value);
+
+                if (justEvaluated && (isNumber || value === '(')) {
+                    if (isOperator) {
+                        currentExpression = currentInput;
+                    } else {
+                        currentInput = '0';
+                        currentExpression = '';
+                    }
+                }
+                justEvaluated = false;
+
+                if (isNumber) {
+                    if (currentInput === '0' || currentInput === 'Error') currentInput = value;
+                    else currentInput += value;
+                } else if (value === '.') {
+                    if (!currentInput.includes('.')) currentInput += '.';
+                } else if (isOperator) {
+                    if(currentInput !== 'Error') {
+                        currentExpression += currentInput + ' ' + value + ' ';
+                        currentInput = '0';
+                    }
+                } else {
+                    handleSpecialInput(value);
+                }
+
+                updateDisplay();
+            };
+            
+            const handleSpecialInput = (value) => {
+                switch(value) {
+                    case 'C':
+                        currentInput = '0';
+                        currentExpression = '';
+                        break;
+                    case 'CE':
+                        currentInput = '0';
+                        break;
+                    case 'backspace':
+                        currentInput = currentInput.slice(0, -1) || '0';
+                        break;
+                    case '±':
+                        if (currentInput !== '0') currentInput = (parseFloat(currentInput) * -1).toString();
+                        break;
+                    case '=':
+                        evaluate();
+                        break;
+                    case '%':
+                        currentInput = (parseFloat(currentInput) / 100).toString();
+                        break;
+                    // Memory functions
+                    case 'M+':
+                        memory += parseFloat(currentInput);
+                        saveState();
+                        break;
+                    case 'M-':
+                        memory -= parseFloat(currentInput);
+                        saveState();
+                        break;
+                    case 'MR':
+                        currentInput = memory.toString();
+                        break;
+                    case 'MC':
+                        memory = 0;
+                        saveState();
+                        break;
+                    // Scientific functions
+                    case 'sin': case 'cos': case 'tan':
+                    case 'asin': case 'acos': case 'atan':
+                        applyTrigFunction(value, parseFloat(currentInput));
+                        break;
+                    case 'log':
+                        currentInput = Math.log10(parseFloat(currentInput)).toString();
+                        break;
+                    case 'ln':
+                        currentInput = Math.log(parseFloat(currentInput)).toString();
+                        break;
+                    case 'sqrt':
+                        currentInput = Math.sqrt(parseFloat(currentInput)).toString();
+                        break;
+                    case 'x^2':
+                        currentInput = Math.pow(parseFloat(currentInput), 2).toString();
+                        break;
+                    case 'x^y':
+                        currentExpression += currentInput + ' ^ ';
+                        currentInput = '0';
+                        break;
+                    case 'fact':
+                        currentInput = factorial(parseInt(currentInput)).toString();
+                        break;
+                    case 'abs':
+                        currentInput = Math.abs(parseFloat(currentInput)).toString();
+                        break;
+                    case 'exp':
+                        currentInput = Math.exp(parseFloat(currentInput)).toString();
+                        break;
+                    case 'pi':
+                        currentInput = Math.PI.toString();
+                        break;
+                    case 'e':
+                        currentInput = Math.E.toString();
+                        break;
+                    case '(':
+                         if (currentInput === '0') currentInput = '(';
+                         else currentInput += '(';
+                        break;
+                    case ')':
+                        currentInput += ')';
+                        break;
+                    case 'deg': case 'rad':
+                        angleMode = angleMode === 'deg' ? 'rad' : 'deg';
+                        radDegToggle.textContent = angleMode.toUpperCase();
+                        saveState();
+                        break;
+                }
+            };
+            
+            // --- EVALUATION ---
+            // A safe evaluation function to avoid using eval()
+            const evaluate = () => {
+                if (currentInput === 'Error') return;
+                
+                let finalExpression = (currentExpression + currentInput).replace(/\s/g, '');
+                
+                // Replace special characters for evaluation
+                finalExpression = finalExpression.replace(/÷/g, '/').replace(/×/g, '*').replace(/−/g, '-');
+                finalExpression = finalExpression.replace(/\^/g, '**');
+
+                try {
+                    // This is a simplified parser. For full math precedence, a more complex algorithm like Shunting-yard is needed.
+                    // Function constructor provides a safer alternative to eval().
+                    const result = new Function('return ' + finalExpression)();
+                    
+                    if (!isFinite(result)) {
+                        throw new Error("Division by zero");
+                    }
+
+                    addToHistory(currentExpression + currentInput, result);
+                    currentExpression = '';
+                    currentInput = result.toString();
+                    justEvaluated = true;
+                } catch (error) {
+                    console.error(error);
+                    currentInput = 'Error';
+                }
+                updateDisplay();
+            };
+            
+            const addToHistory = (expression, result) => {
+                history.push({ expression, result });
+                if (history.length > 50) {
+                    history.shift();
+                }
+                updateHistoryUI();
+                saveState();
+            };
+            
+            // --- HELPER FUNCTIONS ---
+            const factorial = (n) => {
+                if (n < 0) return NaN;
+                if (n === 0) return 1;
+                return n * factorial(n - 1);
+            };
+
+            const applyTrigFunction = (func, val) => {
+                const valueInRad = angleMode === 'deg' ? val * (Math.PI / 180) : val;
+                let result;
+                switch(func) {
+                    case 'sin': result = Math.sin(valueInRad); break;
+                    case 'cos': result = Math.cos(valueInRad); break;
+                    case 'tan': result = Math.tan(valueInRad); break;
+                    // For inverse functions, the result needs conversion back if in degrees
+                    case 'asin': 
+                        result = Math.asin(val);
+                        if (angleMode === 'deg') result *= (180 / Math.PI);
+                        break;
+                    case 'acos': 
+                        result = Math.acos(val);
+                        if (angleMode === 'deg') result *= (180 / Math.PI);
+                        break;
+                    case 'atan': 
+                        result = Math.atan(val);
+                        if (angleMode === 'deg') result *= (180 / Math.PI);
+                        break;
+                }
+                currentInput = result.toString();
+            };
+
+            // --- Financial & Programming Calculators ---
+            document.getElementById('calculate-emi').addEventListener('click', () => {
+                const p = parseFloat(document.getElementById('loan-principal').value);
+                const r = parseFloat(document.getElementById('loan-rate').value) / 100 / 12;
+                const n = parseFloat(document.getElementById('loan-time').value) * 12;
+                const resultDiv = document.getElementById('emi-result');
+
+                if (isNaN(p) || isNaN(r) || isNaN(n) || p <= 0 || r < 0 || n <= 0) {
+                     resultDiv.textContent = 'Please enter valid inputs.';
+                     return;
+                }
+
+                const emi = p * r * (Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1));
+                const totalPayment = emi * n;
+                const totalInterest = totalPayment - p;
+
+                resultDiv.innerHTML = `
+                    <p>Monthly EMI: <span class="font-bold">${emi.toFixed(2)}</span></p>
+                    <p>Total Interest: <span class="font-bold">${totalInterest.toFixed(2)}</span></p>
+                    <p>Total Payment: <span class="font-bold">${totalPayment.toFixed(2)}</span></p>
+                `;
+            });
+            
+            document.getElementById('prog-convert').addEventListener('click', () => {
+                const fromBase = parseInt(document.getElementById('prog-from-base').value);
+                const toBase = parseInt(document.getElementById('prog-to-base').value);
+                const input = document.getElementById('prog-input').value;
+                const resultDiv = document.getElementById('prog-result');
+
+                if (!input) {
+                    resultDiv.textContent = 'Please enter a number.';
+                    return;
+                }
+
+                try {
+                    const decimalValue = parseInt(input, fromBase);
+                    if (isNaN(decimalValue)) throw new Error('Invalid input for base');
+                    resultDiv.textContent = `Result: ${decimalValue.toString(toBase).toUpperCase()}`;
+                } catch (e) {
+                    resultDiv.textContent = 'Error: Invalid number for the selected base.';
+                }
+            });
+
+
+            // --- INITIALIZATION ---
+            const initialize = () => {
+                loadState();
+                updateDisplay();
+                document.querySelector('.tab-button[data-tab="basic"]').classList.add('active'); // Set default tab
+            };
+
+            initialize();
+        });
+    </script>
+</body>
+</html>
